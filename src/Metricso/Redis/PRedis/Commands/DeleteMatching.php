@@ -1,8 +1,8 @@
 <?php namespace Metricso\Redis\PRedis\Commands;
 
-use Predis\Command\ScriptCommand;
+use Predis\Command\ScriptedCommand;
 
-class DeleteMatching extends ScriptCommand
+class DeleteMatching extends ScriptedCommand
 {
 	public function getKeysCount()
 	{
