@@ -41,7 +41,7 @@ class ConnectionResolver
 	 */
 	public function __construct(array $parameters = [])
 	{
-		$this->usesSentinel = (bool)getenv('METRICSO_REDIS_USE_SENTINEL');
+		$this->usesSentinel = (bool)getenv('REDIS_USE_SENTINEL');
 		$this->parameters = $parameters;
 	}
 
@@ -109,14 +109,14 @@ class ConnectionResolver
 
 		do
 		{
-			$sentinelName = sprintf('METRICSO_REDIS_SENTINEL_HOST_%d', $i++);
+			$sentinelName = sprintf('REDIS_SENTINEL_HOST_%d', $i++);
 			$sentinel = getenv($sentinelName);
 
 			if (!$sentinel)
 			{
 				if (empty($this->sentinels))
 				{
-					throw new RedisSentinelConfigurationException('You must specify at least one sentinel using METRICSO_REDIS_SENTINEL_HOST_[0-9] ENV.');
+					throw new RedisSentinelConfigurationException('You must specify at least one sentinel using REDIS_SENTINEL_HOST_[0-9] ENV.');
 				}
 
 				break;
@@ -152,7 +152,7 @@ class ConnectionResolver
 	 */
 	private function getMasterName()
 	{
-		return getenv('METRICSO_REDIS_MASTER_NAME') ?: self::DEFAULT_MASTER_NAME;
+		return getenv('REDIS_MASTER_NAME') ?: self::DEFAULT_MASTER_NAME;
 	}
 
 	/**
@@ -193,9 +193,9 @@ class ConnectionResolver
 	{
 		$masterHost = self::DEFAULT_MASTER_HOST;
 
-		if (getenv('METRICSO_REDIS_HOST'))
+		if (getenv('REDIS_HOST'))
 		{
-			$masterHost = getenv('METRICSO_REDIS_HOST');
+			$masterHost = getenv('REDIS_HOST');
 		}
 		elseif (gethostbyname(self::DEFAULT_REDIS_HOSTNAME) <> self::DEFAULT_REDIS_HOSTNAME)
 		{
