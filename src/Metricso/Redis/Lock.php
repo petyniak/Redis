@@ -30,6 +30,7 @@ class Lock
 		$key = sprintf($this->lockKey, $resourceName);
 
 		/** @noinspection PhpParamsInspection */
+		/** @noinspection PhpUndefinedMethodInspection */
 		$isSet = $this->redis->set($key, $token, 'PX', $ttl, 'NX');
 
 		return $isSet ? $token : false;
@@ -43,6 +44,8 @@ class Lock
 	 */
 	public function unlock($resourceName, $lockToken)
 	{
+		$key = sprintf($this->lockKey, $resourceName);
+
 		$script = '
 			if redis.call("GET", KEYS[1]) == ARGV[1] then
 				return redis.call("DEL", KEYS[1])
@@ -51,7 +54,7 @@ class Lock
 			end
 		';
 
-		return !! $this->redis->eval($script, 1, $resourceName, $lockToken);
+        return $this->redis->eval($script, 1, $key, $lockToken);
 	}
 }
 
