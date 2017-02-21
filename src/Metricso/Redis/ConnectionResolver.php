@@ -17,7 +17,7 @@ class ConnectionResolver
 	/**
 	 * @var array
 	 */
-	private $sentinels = [];
+	private $hosts = [];
 	/**
 	 * @var
 	 */
@@ -31,20 +31,48 @@ class ConnectionResolver
 	 */
 	private $parameters;
 
-	const DEFAULT_MASTER_HOST = '127.0.0.1:6379';
-	const DEFAULT_REDIS_HOSTNAME = 'redis';
-	const DEFAULT_MASTER_PORT = 6379;
 	const DEFAULT_MASTER_NAME = 'mymaster';
 
 	/**
 	 * @param array $parameters
-	 * @param array $sentinels
+	 * @param array $hosts
 	 * @param bool|true $useSentinel
+	 * @throws RedisSentinelConfigurationException
 	 */
-	public function __construct(array $parameters = [], array $sentinels = [], $useSentinel = true)
+	public function __construct(array $parameters = [], array $hosts = [], $useSentinel = true)
 	{
+		if (empty($hosts))
+		{
+			throw new RedisSentinelConfigurationException('You must specify at least one sentinel host.');
+		}
+
 		$this->usesSentinel = $useSentinel;
 		$this->parameters = $parameters;
+
+		$this->hosts = $hosts;
+	}
+
+
+	private function makeSentinels(array $hosts)
+	{
+		$sentinels = [];
+		foreach($hosts as $host) {
+			$sentinels[] = $this->makeHostFromString($host);
+		}
+
+		return $sentinels;
+	}
+
+	/**
+	 * @param $sentinel
+	 *
+	 * @return array
+	 */
+	private function makeHostFromString($sentinel)
+	{
+		$sentinel = explode(':', $sentinel);
+
+		return new Client($sentinel[0], $sentinel[1]);
 	}
 
 	/**
@@ -66,15 +94,13 @@ class ConnectionResolver
 
 	/**
 	 * @return HAClient
-	 * @throws RedisSentinelConfigurationException
+	 * @throws ConnectionError
 	 * @throws \PSRedis\Exception\ConfigurationError
-	 * @throws \PSRedis\Exception\ConnectionError
 	 */
 	private function resolveSentinelConnection()
 	{
-		$this->setSentinels();
-
-		$masterDiscovery = $this->masterDiscovery();
+		$sentinels = $this->makeSentinels($this->hosts);
+		$masterDiscovery = $this->masterDiscovery($sentinels);
 
 		$backoffStrategy = new FiveTimes();
 		$masterDiscovery->setBackoffStrategy($backoffStrategy);
@@ -94,7 +120,7 @@ class ConnectionResolver
 	private function resolveSimpleConnection()
 	{
 		$template = ['host', 'port'];
-		$redisHost = $this->getRedisMasterHost();
+		$redisHost = array_shift($this->hosts);
 
 		$connectionDetails = array_combine($template, $redisHost);
 		$connectionDetails = array_merge($connectionDetails, $this->parameters);
@@ -103,50 +129,11 @@ class ConnectionResolver
 	}
 
 	/**
-	 * @throws RedisSentinelConfigurationException
-	 */
-	private function setSentinels()
-	{
-		$i = 0;
-
-		do
-		{
-			$sentinelName = sprintf('REDIS_SENTINEL_HOST_%d', $i++);
-			$sentinel = getenv($sentinelName);
-
-			if (!$sentinel)
-			{
-				if (empty($this->sentinels))
-				{
-					throw new RedisSentinelConfigurationException('You must specify at least one sentinel using REDIS_SENTINEL_HOST_[0-9] ENV.');
-				}
-
-				break;
-			}
-
-			$this->sentinels[] = $this->getSentinelFromEnv($sentinel);
-		}
-		while (true);
-	}
-
-	/**
-	 * @param $sentinel
-	 *
-	 * @return array
-	 */
-	private function getSentinelFromEnv($sentinel)
-	{
-		$sentinel = explode(':', $sentinel);
-
-		return new Client($sentinel[0], $sentinel[1]);
-	}
-
-	/**
 	 * @return array
 	 */
 	public function getSentinels()
 	{
-		return $this->sentinels;
+		return $this->hosts;
 	}
 
 	/**
@@ -154,17 +141,18 @@ class ConnectionResolver
 	 */
 	private function getMasterName()
 	{
-		return getenv('REDIS_MASTER_NAME') ?: self::DEFAULT_MASTER_NAME;
+		return self::DEFAULT_MASTER_NAME;
 	}
 
 	/**
+	 * @param $sentinels
 	 * @return MasterDiscovery
 	 */
-	private function masterDiscovery()
+	private function masterDiscovery($sentinels)
 	{
 		$masterDiscovery = new MasterDiscovery($this->getMasterName());
 
-		foreach ($this->getSentinels() as $sentinel)
+		foreach ($sentinels as $sentinel)
 		{
 			$masterDiscovery->addSentinel($sentinel);
 		}
@@ -186,32 +174,6 @@ class ConnectionResolver
 	public function getMaster()
 	{
 		return $this->master;
-	}
-
-	/**
-	 * @return array
-	 */
-	public function getRedisMasterHost()
-	{
-		$masterHost = self::DEFAULT_MASTER_HOST;
-
-		if (getenv('REDIS_HOST'))
-		{
-			$masterHost = getenv('REDIS_HOST');
-		}
-		elseif (gethostbyname(self::DEFAULT_REDIS_HOSTNAME) <> self::DEFAULT_REDIS_HOSTNAME)
-		{
-			$masterHost = gethostbyname(self::DEFAULT_REDIS_HOSTNAME);
-		}
-
-		$masterHost = explode(':', $masterHost);
-
-		if (!isset($masterHost[1]))
-		{
-			$masterHost[1] = self::DEFAULT_MASTER_PORT;
-		}
-
-		return $masterHost;
 	}
 
 }
