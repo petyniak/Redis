@@ -38,10 +38,12 @@ class ConnectionResolver
 
 	/**
 	 * @param array $parameters
+	 * @param array $sentinels
+	 * @param bool|true $useSentinel
 	 */
-	public function __construct(array $parameters = [])
+	public function __construct(array $parameters = [], array $sentinels = [], $useSentinel = true)
 	{
-		$this->usesSentinel = (bool)getenv('REDIS_USE_SENTINEL');
+		$this->usesSentinel = $useSentinel;
 		$this->parameters = $parameters;
 	}
 
