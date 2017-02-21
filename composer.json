@@ -1,5 +1,5 @@
 {
-    "name": "metricsocom/redis",
+    "name": "metricso/redis",
     "description": "Metricso Sentinel Connection Resolver",
     "require": {
         "doctrine/cache": "~1.4",
