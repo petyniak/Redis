@@ -120,7 +120,7 @@ class ConnectionResolver
 	private function resolveSimpleConnection()
 	{
 		$template = ['host', 'port'];
-		$redisHost = array_shift($this->hosts);
+		$redisHost = reset($this->hosts);
 
 		$connectionDetails = array_combine($template, $redisHost);
 		$connectionDetails = array_merge($connectionDetails, $this->parameters);
