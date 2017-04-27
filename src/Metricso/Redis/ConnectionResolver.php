@@ -121,6 +121,7 @@ class ConnectionResolver
 	{
 		$template = ['host', 'port'];
 		$redisHost = reset($this->hosts);
+		$redisHost = explode(":", $redisHost);
 
 		$connectionDetails = array_combine($template, $redisHost);
 		$connectionDetails = array_merge($connectionDetails, $this->parameters);
