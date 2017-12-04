@@ -31,6 +31,8 @@ class ConnectionResolver
 	 */
 	private $parameters;
 
+	private $backoffStrategy;
+
 	const DEFAULT_MASTER_NAME = 'mymaster';
 
 	/**
@@ -48,6 +50,8 @@ class ConnectionResolver
 
 		$this->usesSentinel = $useSentinel;
 		$this->parameters = $parameters;
+
+		$this->backoffStrategy = new FiveTimes();
 
 		$this->hosts = $hosts;
 	}
@@ -102,9 +106,6 @@ class ConnectionResolver
 		$sentinels = $this->makeSentinels($this->hosts);
 		$masterDiscovery = $this->masterDiscovery($sentinels);
 
-		$backoffStrategy = new FiveTimes();
-		$masterDiscovery->setBackoffStrategy($backoffStrategy);
-
 		try {
 			$this->master = $masterDiscovery->getMaster();
 		} catch(ConnectionError $e) {
@@ -152,6 +153,7 @@ class ConnectionResolver
 	private function masterDiscovery($sentinels)
 	{
 		$masterDiscovery = new MasterDiscovery($this->getMasterName());
+        $masterDiscovery->setBackoffStrategy($this->backoffStrategy);
 
 		foreach ($sentinels as $sentinel)
 		{

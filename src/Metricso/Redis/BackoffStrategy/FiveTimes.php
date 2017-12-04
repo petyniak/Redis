@@ -8,8 +8,6 @@ class FiveTimes implements BackoffStrategy
 {
 	private $incrementalStrategy;
 
-	private $attempts = 0;
-
 	public function __construct()
 	{
 		$this->incrementalStrategy = new BackoffStrategy\Incremental(500, 2);
@@ -28,18 +26,11 @@ class FiveTimes implements BackoffStrategy
 
 	public function shouldWeTryAgain()
 	{
-		$result = $this->incrementalStrategy->shouldWeTryAgain();
-
-		if (true === $result)
-		{
-			$this->attempts++;
-		}
-
-		return $result;
+		return $this->incrementalStrategy->shouldWeTryAgain();
 	}
 
 	public function getAttempts()
 	{
-		return $this->attempts;
+		return $this->incrementalStrategy->getAttempts();
 	}
 }
