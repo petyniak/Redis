@@ -28,9 +28,4 @@ class FiveTimes implements BackoffStrategy
 	{
 		return $this->incrementalStrategy->shouldWeTryAgain();
 	}
-
-	public function getAttempts()
-	{
-		return $this->incrementalStrategy->getAttempts();
-	}
 }

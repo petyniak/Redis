@@ -109,7 +109,7 @@ class ConnectionResolver
 		try {
 			$this->master = $masterDiscovery->getMaster();
 		} catch(ConnectionError $e) {
-			throw new ConnectionError(sprintf('%s - [%s attempts]', $e->getMessage(), $this->backoffStrategy->getAttempts()));
+			throw new ConnectionError($e->getMessage());
 		}
 
 		return new HAClient($masterDiscovery);
